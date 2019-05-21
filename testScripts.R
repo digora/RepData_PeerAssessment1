@@ -84,12 +84,21 @@ View(mmComparison)
 dev.off()
 
 ## Are there differences in activity patterns between weekdays and weekends?
-
-#Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
-
+#Create a new factor variable in the dataset with two levels – 
+#“weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+mad[, date := as.POSIXct(date, format = "%Y-%m-%d")]
+mad[, `Day of Week`:= weekdays(x = date)]
+mad[grepl(pattern = "Monday|Tuesday|Wednesday|Thursday|Friday", x = `Day of Week`), "weekday or weekend"] <- "weekday"
+mad[grepl(pattern = "Saturday|Sunday", x = `Day of Week`), "weekday or weekend"] <- "weekend"
+mad[, `weekday or weekend` := as.factor(`weekday or weekend`)]
 
 #Make a panel plot containing a time series plot (i.e. \color{red}{\verb|type = "l"|}type="l") 
 #of the 5-minute interval (x-axis) and the average number of steps taken, 
 #averaged across all weekday days or weekend days (y-axis). 
 #See the README file in the GitHub repository to see an example of what this plot should 
 #look like using simulated data.
+mad[is.na(steps), "steps"] <- mad[, c(lapply(.SD, median, na.rm = TRUE)), .SDcols = c("steps")]
+madInterval <- mad[, c(lapply(.SD, mean, na.rm = TRUE)), .SDcols = c("steps"), by = .(interval, `weekday or weekend`)] 
+ggplot(madInterval , aes(x = interval , y = steps, color=`weekday or weekend`)) + geom_line() + labs(title = "Avg. Daily Steps by Weektype", x = "Interval", y = "No. of Steps") + facet_wrap(~`weekday or weekend` , ncol = 1, nrow=2)
+
+dev.off()
